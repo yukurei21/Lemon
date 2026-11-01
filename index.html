@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#17181c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Lemon 英単語デモ</title>
+<style>
+:root{
+  /* One dark world: warm charcoal + a single lemon accent. Phone-width single column; a bottom sheet is the pre-start ritual. */
+  --bg:#17181c;
+  --surface:#23252a;
+  --surface-2:#2d3036;
+  --line:#3b3e45;
+  --text:#f3f2ec;
+  --muted:#9b9da4;
+  --lemon:#f6d03c;
+  --lemon-deep:#c9a514;
+  --lemon-ink:#2a2306;
+  --leaf:#86cc66;
+  --coral:#ff806f;
+  --font-ui:"Roboto","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
+  --font-latin:"Roboto","Noto Sans JP",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--lemon);outline-offset:2px}
+.num-font{font-family:var(--font-latin);font-variant-numeric:tabular-nums}
+#app{max-width:480px;margin:0 auto;min-height:100%;position:relative}
+.screen{display:none;min-height:100%}
+.screen.active{display:block}
+.press{transition:transform .12s ease}
+.press:active{transform:scale(.97)}
+
+/* ---------- home ---------- */
+#home{padding:14px 16px 104px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 2px 14px}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--font-latin);font-weight:700;font-size:21px;letter-spacing:.01em}
+.streak{display:flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 11px 4px 8px;font-size:13px;font-weight:700}
+.streak b{font-family:var(--font-latin);font-size:15px}
+.search{display:flex;align-items:center;gap:12px;width:100%;background:var(--surface-2);border-radius:14px;padding:13px 16px;color:var(--muted);font-size:16px;text-align:left}
+.section{margin-top:26px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}
+.sec-head h2{font-size:21px;font-weight:800;margin:0;text-wrap:balance}
+.sec-link{color:var(--lemon);font-size:14px;font-weight:700;display:flex;align-items:center;gap:2px}
+.sec-sub{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+
+.today{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:14px}
+.today-goal{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:700}
+.today-goal .done{color:var(--leaf)}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface-2);border-radius:12px;padding:10px 8px;text-align:center}
+.stat small{display:block;color:var(--muted);font-size:11.5px;font-weight:500}
+.stat b{font-family:var(--font-latin);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat b span{font-family:var(--font-ui);font-size:12px;font-weight:700;margin-left:2px}
+
+.deck{background:linear-gradient(180deg,#3a3213 0%,#2a2610 100%);border-radius:20px;padding:16px;display:grid;gap:14px}
+.deck-row{display:flex;gap:14px;align-items:center}
+.cover{flex:0 0 auto;width:74px;aspect-ratio:3/4;border-radius:6px 8px 8px 6px;position:relative;overflow:hidden;box-shadow:0 6px 14px rgba(0,0,0,.35),inset 3px 0 0 rgba(0,0,0,.15);padding:7px 7px 7px 9px;display:flex;flex-direction:column;justify-content:space-between}
+.cover .ct{font-size:10px;font-weight:900;line-height:1.25}
+.cover .cs{position:absolute;right:-12px;bottom:-12px;opacity:.95}
+.cover.lemon{background:linear-gradient(160deg,#ffe46b,#f2c62a);color:var(--lemon-ink)}
+.deck-info{min-width:0}
+.deck-kicker{font-size:12px;color:#d9c98b;font-weight:700}
+.deck-title{font-size:17px;font-weight:800;line-height:1.35;margin:2px 0 6px}
+.deck-meta{font-size:13px;color:#d6d1bd}
+.deck-meta b{font-family:var(--font-latin);font-size:15px;color:var(--text)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:#cfc9b2}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.btn-primary{display:block;width:100%;background:var(--lemon);color:var(--lemon-ink);font-weight:800;font-size:18px;border-radius:14px;padding:14px 16px;box-shadow:0 4px 0 var(--lemon-deep);text-align:center;transition:transform .1s ease,box-shadow .1s ease}
+.btn-primary:active{transform:translateY(3px);box-shadow:0 1px 0 var(--lemon-deep)}
+.btn-ghost{display:block;width:100%;border:1.5px solid var(--line);color:var(--text);font-weight:700;font-size:15px;border-radius:14px;padding:12px 16px;text-align:center}
+
+.bm-row{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}
+.bm{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;text-align:left}
+.bm .ic{width:44px;height:44px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;flex:0 0 auto}
+.bm b{display:block;font-size:14.5px}
+.bm small{color:var(--muted);font-family:var(--font-latin)}
+.bm.link{justify-content:center;text-align:center;color:var(--lemon);font-weight:700;font-size:14px;line-height:1.4}
+
+.night{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:grid;gap:10px}
+.night-head{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px}
+.night p{margin:0;color:var(--muted);font-size:13px}
+.chips-inline{display:flex;flex-wrap:wrap;gap:6px}
+.wchip{font-family:var(--font-latin);font-weight:500;font-size:13px;background:var(--surface-2);border-radius:8px;padding:3px 9px}
+.wchip.weak{box-shadow:inset 0 0 0 1px rgba(255,128,111,.5);color:#ffc2b9}
+
+.shelf{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 8px;margin:0 -16px;padding-left:16px;padding-right:16px;scrollbar-width:none}
+.shelf::-webkit-scrollbar{display:none}
+.shelf-item{flex:0 0 96px;text-align:left}
+.shelf-item .cover{width:96px}
+.shelf-item .cover .ct{font-size:12px}
+.shelf-item p{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.35}
+.lock{position:absolute;left:6px;bottom:6px;font-size:10px;font-weight:700;background:rgba(0,0,0,.45);color:#fff;border-radius:6px;padding:1px 6px}
+
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(23,24,28,.96);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding:8px 0 10px;z-index:5}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:700;color:var(--muted)}
+.tab.on{color:var(--lemon)}
+
+/* ---------- sheet ---------- */
+#backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:10}
+#backdrop.open{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:50%;bottom:0;width:100%;max-width:480px;max-height:94%;overflow-y:auto;background:#202227;border-radius:24px 24px 0 0;transform:translate(-50%,105%);transition:transform .3s cubic-bezier(.2,.8,.2,1);z-index:11;padding:10px 0 0}
+#sheet.open{transform:translate(-50%,0)}
+.handle{width:44px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 14px}
+.donut-wrap{display:grid;place-items:center;position:relative;width:140px;height:140px;margin:0 auto}
+.donut-wrap svg{position:absolute;inset:0}
+.donut-num{font-family:var(--font-latin);font-weight:700;font-size:44px}
+.sheet-title{text-align:center;font-weight:800;font-size:16px;margin:10px 16px 14px;text-wrap:balance}
+.sheet-title .num-font{font-weight:600}
+.pickrow{display:flex;gap:10px;overflow-x:auto;padding:4px 16px 6px;scrollbar-width:none}
+.pickrow::-webkit-scrollbar{display:none}
+.pick{flex:0 0 96px;border:2px solid var(--line);border-radius:16px;padding:10px 6px 8px;text-align:center;display:grid;justify-items:center;gap:2px;background:transparent}
+.pick .dot{width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
+.pick b{font-size:14px}
+.pick small{font-family:var(--font-latin);color:var(--muted);font-size:13px}
+.pick small span{font-family:var(--font-ui);font-size:11px}
+.pick.on{border-color:var(--lemon);box-shadow:0 0 0 1px var(--lemon) inset}
+.pick.dim{background:var(--surface-2);opacity:.6}
+.tip{margin:12px 16px 0;background:#3a3213;border-radius:14px;padding:12px 14px;position:relative}
+.tip b{display:flex;align-items:center;gap:8px;font-size:14.5px}
+.tip p{margin:4px 30px 0 0;font-size:13px;color:#d6d1bd}
+.tip .x{position:absolute;right:10px;top:10px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.3);display:grid;place-items:center}
+.divider{height:1px;background:var(--line);margin:16px 0}
+.optrow{display:grid;grid-template-columns:64px 1fr;gap:14px;align-items:center;padding:6px 16px 14px}
+.opt-ic{width:64px;height:76px;border:2px solid var(--line);border-radius:12px;display:grid;place-items:center}
+.optrow h3{margin:0 0 8px;font-size:14.5px;font-weight:800}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{border:2px solid var(--line);border-radius:10px;padding:7px 12px;font-weight:700;font-size:14px;min-width:64px}
+.seg button.on{border-color:var(--lemon);color:var(--text);box-shadow:0 0 0 1px var(--lemon) inset}
+.setting{display:flex;justify-content:space-between;align-items:center;margin:4px 16px 0;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;font-weight:700;font-size:14.5px;width:calc(100% - 32px);text-align:left}
+.sheet-foot{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(32,34,39,0),#202227 30%);padding:22px 16px 18px}
+
+/* ---------- quiz ---------- */
+#quiz.active{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;padding:10px 16px 22px}
+.qbar{display:flex;align-items:center;gap:14px;padding:4px 0 14px}
+.iconbtn{width:40px;height:40px;display:grid;place-items:center;border-radius:50%;flex:0 0 auto}
+.prog{flex:1;height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--lemon);border-radius:99px;transition:width .3s ease}
+.qcard{flex:1;min-height:260px;border:2px solid var(--line);background:var(--surface);border-radius:20px;position:relative;display:grid;place-items:center;text-align:center;padding:24px 16px;transition:border-color .2s ease}
+.qcard.ok{border-color:var(--leaf)}
+.qcard.ng{border-color:var(--coral)}
+.qcount{font-family:var(--font-latin);color:var(--muted);font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}
+.qword{font-family:var(--font-latin);font-weight:600;letter-spacing:-.01em;line-height:1.1;margin-top:2px;word-break:break-word}
+.qtag{position:absolute;left:50%;top:18px;transform:translateX(-50%);font-size:13px;font-weight:800;border-radius:999px;padding:3px 12px;opacity:0;transition:opacity .15s ease}
+.qtag.show{opacity:1}
+.qtag.ok{background:rgba(134,204,102,.18);color:var(--leaf)}
+.qtag.ng{background:rgba(255,128,111,.16);color:var(--coral)}
+.qbm{position:absolute;right:14px;bottom:12px;width:40px;height:40px;display:grid;place-items:center}
+.skiprow{display:flex;justify-content:flex-end;margin:12px 0 10px}
+.skip{width:64px;height:64px;border-radius:50%;border:2px solid var(--line);font-family:var(--font-latin);font-weight:700;font-size:15px;background:var(--surface)}
+.choices{display:grid;gap:12px}
+.choice{display:flex;align-items:center;gap:16px;width:100%;min-height:62px;border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:10px 22px;text-align:left;font-size:18px;font-weight:700;transition:background .15s ease,border-color .15s ease,transform .1s ease}
+.choice:active{transform:scale(.985)}
+.choice .n{font-family:var(--font-latin);color:#6d7078;font-weight:600;width:14px;flex:0 0 auto}
+.choice .t{flex:1;line-height:1.35}
+.choice .mark{opacity:0;transition:opacity .15s ease;flex:0 0 auto}
+.choice.ok{background:rgba(134,204,102,.16);border-color:var(--leaf)}
+.choice.ok .mark{opacity:1}
+.choice.ng{background:rgba(255,128,111,.14);border-color:var(--coral)}
+.choice.fade{opacity:.45}
+
+/* ---------- result ---------- */
+#result{padding:10px 16px 40px}
+.rbar{display:flex;justify-content:space-between;padding:4px 0 6px}
+.r-head{text-align:center;margin-top:10px}
+.r-big{font-size:68px;font-weight:900;line-height:1.05;letter-spacing:.02em;margin:0;text-wrap:balance}
+.r-sub{font-size:17px;font-weight:800;margin:10px 0 0}
+.stamp{width:130px;height:130px;margin:20px auto 10px;display:block}
+.stamp.pop{animation:pop .55s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes pop{from{transform:rotate(-30deg) scale(.4);opacity:0}to{transform:rotate(0) scale(1);opacity:1}}
+.r-card{background:var(--surface);border-radius:20px;padding:18px 16px;text-align:center;margin:8px auto 0;max-width:360px}
+.r-chip{display:inline-block;background:#3a3213;color:var(--lemon);font-weight:800;font-size:15px;border-radius:999px;padding:3px 16px}
+.r-score{font-family:var(--font-latin);font-weight:700;font-size:64px;line-height:1.1;margin:6px 0 10px;font-variant-numeric:tabular-nums}
+.r-score small{font-size:36px;color:var(--text)}
+.r-2col{display:grid;grid-template-columns:1fr 1px 1fr;align-items:center}
+.r-2col .sep{height:46px;background:var(--line)}
+.r-2col small{display:block;color:var(--muted);font-size:14px;font-weight:700}
+.r-2col b{font-family:var(--font-latin);font-size:32px;font-weight:600;font-variant-numeric:tabular-nums}
+.r-2col b span{font-family:var(--font-ui);font-size:15px;font-weight:800;margin-left:2px}
+.r-actions{display:grid;gap:10px;max-width:360px;margin:22px auto 0}
+.r-note{color:var(--muted);font-size:12.5px;text-align:center;margin:2px 0 0}
+.r-list h3{font-size:19px;font-weight:800;margin:30px 0 10px}
+.wrow{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:14px 16px 10px;margin-bottom:10px}
+.wrow-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.wrow-top b{font-family:var(--font-latin);font-size:19px;font-weight:600}
+.wrow-top p{margin:2px 0 0;font-size:14px;color:#d8d7d0}
+.wrow-bot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:var(--surface-2);padding:3px 12px;font-size:13px;font-weight:700}
+.pill i{width:8px;height:8px;border-radius:50%}
+.store-warn{margin:18px 0 0;color:var(--muted);font-size:12px;text-align:center}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HOME -->
+  <section id="home" class="screen active" aria-label="ホーム">
+    <div class="topbar">
+      <div class="brand"><span id="logo"></span>Lemon</div>
+      <div class="streak" title="連続学習日数">
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 3.5-2.5 5-2.5 8.5A2.5 2.5 0 0 0 12 13c2 0 3-1.6 2.6-4C17 10.5 18.5 13 18.5 15.5 18.5 19.1 15.6 22 12 22s-6.5-2.9-6.5-6.5C5.5 10 11 7.5 12 2z" fill="#ff9a4a"/></svg>
+        <b id="h-streak">0</b>日
+      </div>
+    </div>
+
+    <button class="search press" type="button">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+      教材を探す
+    </button>
+
+    <div class="section">
+      <div class="sec-head"><h2>今日の学習</h2><span class="sec-link" id="h-date"></span></div>
+      <p class="sec-sub">1日1セット（10問）できたら十分。</p>
+      <div class="today">
+        <div class="today-goal"><span>今日の1セット</span><span id="h-goal"></span></div>
+        <div class="bar"><i id="h-goalbar" style="background:var(--lemon);width:0"></i></div>
+        <div class="stats3">
+          <div class="stat"><small>今日といた数</small><b id="h-n">0<span>問</span></b></div>
+          <div class="stat"><small>今日の正答率</small><b id="h-rate">–<span>%</span></b></div>
+          <div class="stat"><small>覚えた単語</small><b id="h-known">0<span>語</span></b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><h2>学習中の単語帳</h2></div>
+      <div class="deck">
+        <div class="deck-row">
+          <div class="cover lemon" aria-hidden="true">
+            <span class="ct">英検<br>2級</span>
+            <span class="ct" style="font-size:9px">よく出る<br>単語80</span>
+            <span class="cs" id="cover-slice"></span>
+          </div>
+          <div class="deck-info">
+            <div class="deck-kicker">単語編 Section 1・デモ版</div>
+            <div class="deck-title">英検2級 よく出る単語80</div>
+            <div class="deck-meta">覚えた <b id="d-known">0</b> / 80 語</div>
+          </div>
+        </div>
+        <div>
+          <div class="bar" id="d-bar" style="height:10px"></div>
+          <div class="legend" style="margin-top:8px">
+            <span><i style="background:var(--leaf)"></i>覚えた <b class="num-font" id="lg-known">0</b></span>
+            <span><i style="background:var(--lemon)"></i>うろ覚え <b class="num-font" id="lg-fuzzy">0</b></span>
+            <span><i style="background:var(--coral)"></i>苦手 <b class="num-font" id="lg-weak">0</b></span>
+            <span><i style="background:#5a5d64"></i>未学習 <b class="num-font" id="lg-new">80</b></span>
+          </div>
+        </div>
+        <button class="btn-primary" id="btn-continue" type="button">続きから</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><h2>寝る前の見直し</h2></div>
+      <div class="night" id="night"></div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><h2>ブックマーク</h2><span class="sec-link">すべて見る<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></div>
+      <p class="sec-sub">保存した単語だけをまとめて復習できます。</p>
+      <div class="bm-row">
+        <button class="bm press" type="button">
+          <span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z" fill="var(--lemon)"/></svg></span>
+          <span><b>すべてのブックマーク</b><small>0 問</small></span>
+        </button>
+        <button class="bm link press" type="button">ブックマークを<br>すべて見る</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><h2>ほかの単語帳</h2><span class="sec-link">すべて見る<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></div>
+      <div class="shelf" id="shelf"></div>
+    </div>
+
+    <nav class="tabbar" aria-label="メニュー">
+      <button class="tab on" type="button">
+        <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5C5.5 4.3 8.5 4.3 11 5.8V20c-2.5-1.4-5.5-1.4-8 0z M13 5.8c2.5-1.5 5.5-1.5 8-.3V20c-2.5-1.4-5.5-1.4-8 0z" fill="currentColor"/></svg>
+        教材一覧
+      </button>
+      <button class="tab press" type="button">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-6M10 20v-9M15 20v-5M20 20V8M4 10l5-4 5 4 6-5"/></svg>
+        学習データ
+      </button>
+      <button class="tab press" type="button">
+        <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4.2" fill="currentColor"/><path d="M4 21c.6-4.4 3.8-7 8-7s7.4 2.6 8 7z" fill="currentColor"/></svg>
+        マイページ
+      </button>
+    </nav>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="screen" aria-label="問題">
+    <div class="qbar">
+      <button class="iconbtn" id="q-close" type="button" aria-label="やめてホームに戻る">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg>
+      </button>
+      <div class="prog"><i id="q-prog"></i></div>
+      <button class="iconbtn" type="button" aria-label="メニュー">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <div class="qcard" id="q-card">
+      <span class="qtag" id="q-tag"></span>
+      <div>
+        <div class="qcount" id="q-count">1 / 10</div>
+        <div class="qword" id="q-word">word</div>
+      </div>
+      <button class="qbm press" id="q-bm" type="button" aria-label="ブックマーク" aria-pressed="false">
+        <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path id="q-bm-path" d="M6.5 3.5h11v16.8L12 16.2l-5.5 4.1z" fill="none" stroke="#8a8d94" stroke-width="2" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="skiprow"><button class="skip press" id="q-skip" type="button">SKIP</button></div>
+    <div class="choices" id="q-choices"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="screen" aria-label="結果">
+    <div class="rbar">
+      <button class="iconbtn" id="r-close" type="button" aria-label="ホームに戻る">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg>
+      </button>
+      <button class="iconbtn" type="button" aria-label="メニュー">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <div class="r-head">
+      <h1 class="r-big" id="r-big">満点</h1>
+      <p class="r-sub" id="r-sub">文句のつけようがない。</p>
+    </div>
+    <span class="stamp" id="r-stamp"></span>
+    <div class="r-card">
+      <span class="r-chip">わかった数</span>
+      <div class="r-score" id="r-score">10<small>/10</small></div>
+      <div class="r-2col">
+        <div><small>解答時間</small><b id="r-time">0<span>秒</span></b></div>
+        <div class="sep"></div>
+        <div><small>本日の累計</small><b id="r-today">0<span>問</span></b></div>
+      </div>
+    </div>
+    <div class="r-actions">
+      <button class="btn-primary" id="r-done" type="button">今日はここまで</button>
+      <button class="btn-ghost press" id="r-more" type="button">もう1セットやる</button>
+    </div>
+    <div class="r-list" id="r-list"></div>
+    <p class="store-warn" id="store-warn" hidden>このブラウザでは記録を保存できないため、閉じると記録が消えます。</p>
+  </section>
+
+</div>
+
+<!-- SHEET (pre-start) -->
+<div id="backdrop"></div>
+<div id="sheet" role="dialog" aria-modal="true" aria-label="学習の設定">
+  <div class="handle"></div>
+  <div class="donut-wrap">
+    <svg id="donut" viewBox="0 0 140 140" aria-hidden="true"></svg>
+    <span class="donut-num">1</span>
+  </div>
+  <div class="sheet-title">単語編　よく出る基本単語　<span class="num-font">Section1</span></div>
+  <div class="pickrow" id="picks"></div>
+  <div class="tip" id="tip">
+    <b><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2l1.8 5.2L17 9l-5.2 1.8L10 16l-1.8-5.2L3 9l5.2-1.8z" fill="var(--lemon)"/><path d="M18 13l.9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9z" fill="var(--lemon)"/></svg>「おまかせ」とは？</b>
+    <p>覚え具合と前に解いた日から、いま出すといい順番で10問選びます。</p>
+    <button class="x" id="tip-x" type="button" aria-label="閉じる"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="divider"></div>
+  <div class="optrow">
+    <div class="opt-ic" aria-hidden="true">
+      <svg width="44" height="54" viewBox="0 0 44 54"><rect x="9" y="5" width="26" height="3.5" rx="1.7" fill="#d8d7d0"/><g fill="#55585f"><rect x="2" y="16" width="40" height="7" rx="3.5"/><rect x="2" y="26" width="40" height="7" rx="3.5"/><rect x="2" y="36" width="40" height="7" rx="3.5"/><rect x="2" y="46" width="40" height="7" rx="3.5"/></g><g fill="#d8d7d0"><rect x="12" y="18.8" width="26" height="1.6" rx=".8"/><rect x="12" y="28.8" width="26" height="1.6" rx=".8"/><rect x="12" y="38.8" width="26" height="1.6" rx=".8"/><rect x="12" y="48.8" width="26" height="1.6" rx=".8"/></g></svg>
+    </div>
+    <div><h3>学習モード</h3><div class="seg" data-seg="mode"><button type="button" class="on">4択</button><button type="button">カード</button><button type="button">タイピング</button><button type="button">例文</button></div></div>
+  </div>
+  <div class="optrow">
+    <div class="opt-ic" aria-hidden="true">
+      <svg width="46" height="54" viewBox="0 0 46 54"><text x="3" y="22" font-family="Roboto,sans-serif" font-weight="700" font-size="22" fill="#d8d7d0">A</text><path d="M14 30h16m-5-5 5 5-5 5" fill="none" stroke="#d8d7d0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><text x="22" y="52" font-family="'Noto Sans JP',sans-serif" font-weight="800" font-size="22" fill="#d8d7d0">あ</text></svg>
+    </div>
+    <div><h3>出題形式</h3><div class="seg" data-seg="dir"><button type="button" class="on">英日</button><button type="button">日英</button><button type="button">リスニング</button></div></div>
+  </div>
+  <button class="setting press" type="button">詳細設定<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+  <div class="sheet-foot"><button class="btn-primary" id="btn-start" type="button">スタート</button></div>
+</div>
+
+<script>
+/* ---------- data: 80 英検2級レベルの単語（デモ用に独自に選定） ---------- */
+const RAW = [
+["abandon","を捨てる、断念する","v"],["accurate","正確な","a"],["achieve","を達成する","v"],["acquire","を習得する","v","get"],
+["adapt","適応する","v"],["advantage","利点、強み","n","ben"],["afford","を買う余裕がある","v"],["annual","毎年の、年1回の","a"],
+["anxious","心配して","a"],["apparent","明らかな","a"],["appreciate","をありがたく思う","v"],["appropriate","適切な","a","suit"],
+["assume","を当然と思う、仮定する","v"],["attempt","を試みる","v"],["attitude","態度","n"],["available","利用できる、手に入る","a"],
+["avoid","を避ける","v","avd"],["benefit","利益、恩恵","n","ben"],["budget","予算","n"],["capable","能力がある","a"],
+["citizen","市民","n"],["combine","を組み合わせる","v"],["complain","不平を言う","v"],["conclude","と結論づける","v"],
+["consider","をよく考える","v"],["contain","を含む","v","inc"],["convenient","便利な","a"],["crisis","危機","n"],
+["decline","減少する、衰える","v","dec"],["definitely","確かに、間違いなく","r"],["delay","を遅らせる","v"],["demand","需要、要求","n"],
+["destroy","を破壊する","v"],["device","装置、機器","n"],["disappear","消える","v"],["efficient","効率的な","a"],
+["eliminate","を取り除く","v"],["emerge","現れる","v"],["encourage","を励ます、促す","v"],["environment","環境","n"],
+["estimate","を見積もる","v"],["evidence","証拠","n"],["expand","を拡大する","v"],["expense","費用、出費","n"],
+["facility","施設","n"],["former","前の、元の","a","prev"],["frequently","頻繁に","r"],["generate","を生み出す","v"],
+["household","世帯、家庭","n"],["identify","を特定する","v"],["ignore","を無視する","v"],["impact","影響","n","inf"],
+["improve","を改善する","v"],["include","を含む","v","inc"],["indicate","を示す","v","show"],["influence","に影響を与える","v","inf"],
+["maintain","を維持する","v"],["observe","を観察する","v"],["obtain","を手に入れる","v","get"],["occur","起こる","v"],
+["participate","参加する","v"],["permanent","永続的な","a"],["prevent","を防ぐ","v","avd"],["previous","以前の","a","prev"],
+["reduce","を減らす","v","dec"],["reject","を拒否する","v"],["reliable","信頼できる","a"],["require","を必要とする","v"],
+["resource","資源","n"],["respond","応答する、反応する","v"],["responsible","責任がある","a"],["reveal","を明らかにする","v","show"],
+["significant","重要な、かなりの","a"],["suitable","適した","a","suit"],["sufficient","十分な","a"],["survive","生き残る","v"],
+["temporary","一時的な","a"],["tradition","伝統","n"],["vehicle","乗り物、車両","n"],["wildlife","野生生物","n"]
+];
+const WORDS = RAW.map(([w,m,p,g])=>({w,m,p,g:g||null}));
+const TOTAL = WORDS.length;
+
+/* ---------- 結果のひとこと（固定・点数帯ごと） ---------- */
+const LINES = {
+  perfect:[["満点","文句のつけようがない。"],["神回","今日はちょっと調子よすぎ。"],["完璧","出来すぎて逆にこわい。"]],
+  high:[["ほぼ満点","あと少し、惜しかった。"],["さすが","これだけ取れたら上出来。"],["いい感じ","この調子で十分いける。"]],
+  mid:[["ぼちぼち","半分わかれば上等。"],["ここから","知らない単語に会えたのが収穫。"],["悪くない","間違えたのだけ、下で見とこう。"]],
+  low:[["おつかれ","今日は顔合わせの日ってことで。"],["はじめまして","知らない単語ばかり。それが普通。"],["まあまあまあ","ここから覚えればいい。"]]
+};
+
+/* ---------- storage ---------- */
+const KEY = "lemon-demo-v1";
+let store = {words:{},days:{}};
+let canStore = true;
+try{
+  const s = localStorage.getItem(KEY);
+  if(s){ const p = JSON.parse(s); if(p && p.words && p.days) store = p; }
+}catch(e){ canStore = false; }
+function save(){ if(!canStore) return; try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){ canStore = false; } }
+
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2,"0");
+function dkey(d){ d = d || new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function today(){ return store.days[dkey()] || {n:0,c:0,sets:0}; }
+function todayRec(){ const k = dkey(); return store.days[k] || (store.days[k] = {n:0,c:0,sets:0}); }
+function streak(){
+  const d = new Date();
+  const has = k => store.days[k] && store.days[k].sets > 0;
+  if(!has(dkey(d))) d.setDate(d.getDate()-1);
+  let s = 0;
+  while(has(dkey(d))){ s++; d.setDate(d.getDate()-1); }
+  return s;
+}
+function status(w){
+  const r = store.words[w];
+  if(!r || !r.seen) return "new";
+  if(r.wrong) return "weak";
+  if(r.streak >= 2) return "known";
+  return "fuzzy";
+}
+function counts(){
+  const c = {known:0,fuzzy:0,weak:0,new:0};
+  WORDS.forEach(x => c[status(x.w)]++);
+  return c;
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
+const COLORS = {known:"var(--leaf)",fuzzy:"var(--lemon)",weak:"var(--coral)",new:"#5a5d64"};
+const LABEL = {known:"覚えた",fuzzy:"うろ覚え",weak:"苦手",new:"未学習"};
+
+/* ---------- lemon slice graphic ---------- */
+function lemonSVG(size, spin){
+  const segs = 9, cx = 50, cy = 50, r1 = 37, gap = 0.12;
+  let paths = "";
+  for(let i=0;i<segs;i++){
+    const a0 = (i/segs)*Math.PI*2 + gap/2, a1 = ((i+1)/segs)*Math.PI*2 - gap/2;
+    const ox = cx + Math.cos((a0+a1)/2)*3.2, oy = cy + Math.sin((a0+a1)/2)*3.2;
+    const x0 = ox + Math.cos(a0)*r1, y0 = oy + Math.sin(a0)*r1;
+    const x1 = ox + Math.cos(a1)*r1, y1 = oy + Math.sin(a1)*r1;
+    paths += `<path d="M${ox.toFixed(2)} ${oy.toFixed(2)}L${x0.toFixed(2)} ${y0.toFixed(2)}A${r1} ${r1} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}Z" fill="#ffe36a"/>`;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true" style="${spin?"transform:rotate("+spin+"deg)":""}"><circle cx="50" cy="50" r="49" fill="#f2c21f"/><circle cx="50" cy="50" r="44" fill="#fff6c9"/>${paths}<circle cx="50" cy="50" r="3" fill="#fff6c9"/></svg>`;
+}
+$("#logo").innerHTML = lemonSVG(26, 12);
+$("#cover-slice").innerHTML = lemonSVG(48, 20);
+$("#r-stamp").innerHTML = lemonSVG(130, 0);
+
+/* ---------- decorative shelf ---------- */
+const SHELF = [
+  ["英検準2級<br>基本単語","linear-gradient(160deg,#4d7bd6,#2f56a6)","#fff","中学〜高1レベル"],
+  ["英検準1級<br>チャレンジ","linear-gradient(160deg,#c2434e,#8c2433)","#fff","2級のあとに"],
+  ["TOEIC<br>600点<br>必須語","linear-gradient(160deg,#2aa39a,#17706b)","#fff","ビジネスの基本"],
+  ["日常会話<br>フレーズ","linear-gradient(160deg,#8e6bd8,#5e45a8)","#fff","旅行・雑談で使う"],
+  ["大学入試<br>基礎","linear-gradient(160deg,#5aa25a,#2f7034)","#fff","共通テスト対策"]
+];
+$("#shelf").innerHTML = SHELF.map(([t,bg,fg,d]) =>
+  `<button class="shelf-item press" type="button"><div class="cover" style="background:${bg};color:${fg}"><span class="ct">${t}</span><span class="lock">準備中</span></div><p>${d}</p></button>`
+).join("");
+
+/* ---------- home ---------- */
+function renderHome(){
+  const c = counts(), t = today();
+  const d = new Date();
+  $("#h-date").textContent = (d.getMonth()+1)+"月"+d.getDate()+"日";
+  $("#h-streak").textContent = streak();
+  const done = t.sets > 0;
+  $("#h-goal").innerHTML = done ? '<span class="done">できた</span>' : '<span class="num-font">'+Math.min(t.n,10)+'</span> / 10問';
+  $("#h-goalbar").style.width = Math.min(100, t.n*10) + "%";
+  $("#h-goalbar").style.background = done ? "var(--leaf)" : "var(--lemon)";
+  $("#h-n").innerHTML = t.n + "<span>問</span>";
+  $("#h-rate").innerHTML = (t.n ? Math.round(t.c/t.n*100) : "–") + "<span>%</span>";
+  $("#h-known").innerHTML = c.known + "<span>語</span>";
+  $("#d-known").textContent = c.known;
+  ["known","fuzzy","weak","new"].forEach(k => $("#lg-"+k).textContent = c[k]);
+  $("#d-bar").innerHTML = ["known","fuzzy","weak","new"].map(k => `<i style="width:${c[k]/TOTAL*100}%;background:${COLORS[k]}"></i>`).join("");
+  $("#btn-continue").textContent = (c.new === TOTAL) ? "はじめる" : "続きから";
+
+  const weak = WORDS.filter(x => status(x.w) === "weak");
+  $("#night").innerHTML = weak.length
+    ? `<div class="night-head">${moonSVG()}苦手が <span class="num-font">${weak.length}</span> 語あります</div>
+       <p>寝る前に、この単語だけ見直しておくと翌日に残りやすいです。</p>
+       <div class="chips-inline">${weak.slice(0,8).map(x=>`<span class="wchip weak">${x.w}</span>`).join("")}${weak.length>8?`<span class="wchip">+${weak.length-8}</span>`:""}</div>`
+    : `<div class="night-head">${moonSVG()}いまのところ苦手はなし</div>
+       <p>間違えた単語がここにたまります。寝る前にここだけ見れば大丈夫。</p>`;
+}
+function moonSVG(){ return '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="#b9b2ff"/></svg>'; }
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+  window.scrollTo(0,0);
+}
+
+/* ---------- sheet ---------- */
+function renderSheet(){
+  const c = counts();
+  const R = 52, C = 2*Math.PI*R;
+  let off = 0, arcs = "";
+  ["known","fuzzy","weak","new"].forEach(k => {
+    const len = c[k]/TOTAL*C;
+    if(len > 0){
+      arcs += `<circle cx="70" cy="70" r="${R}" fill="none" stroke="${COLORS[k]}" stroke-width="20" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`;
+      off += len;
+    }
+  });
+  $("#donut").innerHTML = arcs;
+  const P = [
+    ["omakase","おまかせ",TOTAL,'<svg width="22" height="22" viewBox="0 0 24 24"><path d="M10 2l1.8 5.2L17 9l-5.2 1.8L10 16l-1.8-5.2L3 9l5.2-1.8z" fill="var(--lemon)"/><path d="M18 13l.9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9z" fill="var(--lemon)"/></svg>'],
+    ["saved","保存済み",0,'<svg width="18" height="22" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z" fill="#b8742e"/></svg>'],
+    ["new","未学習",c.new,'<i class="dot" style="background:#55585f"></i>'],
+    ["weak","苦手",c.weak,'<i class="dot" style="background:var(--coral)"></i>'],
+    ["fuzzy","うろ覚え",c.fuzzy,'<i class="dot" style="background:var(--lemon)"></i>'],
+    ["known","覚えた",c.known,'<i class="dot" style="background:var(--leaf)"></i>']
+  ];
+  $("#picks").innerHTML = P.map(([k,l,n,ic],i) =>
+    `<button type="button" class="pick ${i===0?"on":""} ${k==="saved"?"dim":""}" data-k="${k}"><span class="dot">${ic}</span><b>${l}</b><small>${n}<span>問</span></small></button>`
+  ).join("");
+}
+function openSheet(){
+  renderSheet();
+  $("#backdrop").classList.add("open");
+  $("#sheet").classList.add("open");
+  $("#sheet").scrollTop = 0;
+}
+function closeSheet(){
+  $("#backdrop").classList.remove("open");
+  $("#sheet").classList.remove("open");
+}
+$("#picks").addEventListener("click", e => {
+  const b = e.target.closest(".pick"); if(!b) return;
+  document.querySelectorAll(".pick").forEach(p => p.classList.toggle("on", p === b));
+});
+document.querySelectorAll(".seg").forEach(seg => seg.addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  seg.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+}));
+$("#tip-x").addEventListener("click", () => { $("#tip").hidden = true; });
+$("#backdrop").addEventListener("click", closeSheet);
+$("#btn-continue").addEventListener("click", openSheet);
+$("#btn-start").addEventListener("click", () => { closeSheet(); setTimeout(startQuiz, 180); });
+
+/* ---------- quiz ---------- */
+let Q = null;
+function pickSet(){
+  const by = {weak:[],new:[],fuzzy:[],known:[]};
+  WORDS.forEach(x => by[status(x.w)].push(x));
+  const t = x => (store.words[x.w] || {}).t || 0;
+  by.weak.sort((a,b) => t(a)-t(b));
+  by.fuzzy.sort((a,b) => t(a)-t(b));
+  shuffle(by.known);
+  const out = by.weak.slice(0,4);
+  for(const list of [by.new, by.fuzzy, by.weak.slice(4), by.known]){
+    for(const x of list){ if(out.length >= 10) break; if(!out.includes(x)) out.push(x); }
+  }
+  return shuffle(out.slice(0,10));
+}
+function choicesFor(x){
+  const ok = y => y !== x && y.m !== x.m && !(x.g && y.g === x.g);
+  const same = shuffle(WORDS.filter(y => ok(y) && y.p === x.p));
+  const other = shuffle(WORDS.filter(y => ok(y) && y.p !== x.p));
+  const picks = same.slice(0,3);
+  while(picks.length < 3) picks.push(other.shift());
+  const opts = shuffle(picks.concat([x]));
+  return {opts, ans: opts.indexOf(x)};
+}
+function startQuiz(){
+  const items = pickSet().map(x => Object.assign({x}, choicesFor(x)));
+  Q = {items, i:0, res:[], total:0, locked:false, t0:0};
+  show("quiz");
+  showQ();
+}
+function wordSize(w){ return w.length <= 7 ? 54 : w.length <= 9 ? 48 : w.length <= 11 ? 42 : 36; }
+function showQ(){
+  const it = Q.items[Q.i];
+  $("#q-count").textContent = (Q.i+1) + " / " + Q.items.length;
+  const qw = $("#q-word"); qw.textContent = it.x.w; qw.style.fontSize = wordSize(it.x.w) + "px";
+  $("#q-prog").style.width = (Q.i/Q.items.length*100) + "%";
+  $("#q-card").className = "qcard";
+  $("#q-tag").className = "qtag";
+  setBm(false);
+  $("#q-choices").innerHTML = it.opts.map((o,k) =>
+    `<button class="choice" type="button" data-k="${k}"><span class="n">${k+1}</span><span class="t">${o.m}</span><svg class="mark" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--leaf)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>`
+  ).join("");
+  Q.locked = false;
+  Q.t0 = performance.now();
+}
+function answer(k){
+  if(!Q || Q.locked) return;
+  Q.locked = true;
+  const it = Q.items[Q.i];
+  const dt = (performance.now() - Q.t0)/1000;
+  Q.total += dt;
+  const correct = k === it.ans;
+  const btns = [...document.querySelectorAll(".choice")];
+  btns[it.ans].classList.add("ok");
+  if(k >= 0 && !correct) btns[k].classList.add("ng");
+  btns.forEach((b,i) => { if(i !== it.ans && i !== k) b.classList.add("fade"); });
+  $("#q-card").classList.add(correct ? "ok" : "ng");
+  const tag = $("#q-tag");
+  tag.textContent = correct ? (dt < 1.5 ? "はやい  " : "正解  ") + dt.toFixed(1) + "秒" : (k < 0 ? "スキップ" : "おしい");
+  tag.className = "qtag show " + (correct ? "ok" : "ng");
+  $("#q-prog").style.width = ((Q.i+1)/Q.items.length*100) + "%";
+
+  const r = store.words[it.x.w] || (store.words[it.x.w] = {seen:0,ok:0,streak:0,wrong:false,t:0});
+  r.seen++; r.t = Date.now();
+  if(correct){ r.ok++; r.streak++; r.wrong = false; } else { r.streak = 0; r.wrong = true; }
+  const day = todayRec(); day.n++; if(correct) day.c++;
+  save();
+  Q.res.push({x:it.x, correct});
+  setTimeout(next, correct ? 650 : 1250);
+}
+function next(){
+  Q.i++;
+  if(Q.i >= Q.items.length) finish(); else showQ();
+}
+$("#q-choices").addEventListener("click", e => {
+  const b = e.target.closest(".choice"); if(b) answer(+b.dataset.k);
+});
+$("#q-skip").addEventListener("click", () => answer(-1));
+$("#q-close").addEventListener("click", () => { Q = null; renderHome(); show("home"); });
+document.addEventListener("keydown", e => {
+  if(!$("#quiz").classList.contains("active")) return;
+  if(["1","2","3","4"].includes(e.key)) answer(+e.key - 1);
+});
+let bmOn = false;
+function setBm(v){
+  bmOn = v;
+  $("#q-bm").setAttribute("aria-pressed", v);
+  const p = $("#q-bm-path");
+  p.setAttribute("fill", v ? "var(--lemon)" : "none");
+  p.setAttribute("stroke", v ? "var(--lemon)" : "#8a8d94");
+}
+$("#q-bm").addEventListener("click", () => setBm(!bmOn));
+
+/* ---------- result ---------- */
+function finish(){
+  const day = todayRec(); day.sets++; save();
+  const score = Q.res.filter(r => r.correct).length;
+  const tier = score === 10 ? "perfect" : score >= 8 ? "high" : score >= 5 ? "mid" : "low";
+  const [big, sub] = LINES[tier][Math.floor(Math.random()*LINES[tier].length)];
+  $("#r-big").textContent = big;
+  $("#r-sub").textContent = sub;
+  $("#r-score").innerHTML = score + "<small>/" + Q.items.length + "</small>";
+  $("#r-time").innerHTML = Math.round(Q.total) + "<span>秒</span>";
+  $("#r-today").innerHTML = day.n + "<span>問</span>";
+  const st = $("#r-stamp"); st.classList.remove("pop"); void st.offsetWidth; st.classList.add("pop");
+
+  const miss = Q.res.filter(r => !r.correct), hit = Q.res.filter(r => r.correct);
+  const row = r => {
+    const s = status(r.x.w);
+    return `<div class="wrow"><div class="wrow-top"><div><b>${r.x.w}</b><p>${r.x.m}</p></div></div>
+      <div class="wrow-bot">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="#c9c9c4"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="#c9c9c4" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="pill"><i style="background:${COLORS[s]}"></i>${LABEL[s]}</span>
+      </div></div>`;
+  };
+  $("#r-list").innerHTML =
+    (miss.length ? `<h3>わからなかった（<span class="num-font">${miss.length}</span>）</h3>` + miss.map(row).join("") : "") +
+    (hit.length ? `<h3>わかった（<span class="num-font">${hit.length}</span>）</h3>` + hit.map(row).join("") : "");
+  $("#store-warn").hidden = canStore;
+  show("result");
+}
+$("#r-done").addEventListener("click", () => { Q = null; renderHome(); show("home"); });
+$("#r-close").addEventListener("click", () => { Q = null; renderHome(); show("home"); });
+$("#r-more").addEventListener("click", () => { Q = null; renderHome(); show("home"); setTimeout(openSheet, 120); });
+
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+renderHome();
+</script>
+</body>
+</html>
