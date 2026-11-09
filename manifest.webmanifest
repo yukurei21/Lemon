@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Lemon 英単語",
+  "short_name": "Lemon",
+  "description": "英検2級の英単語を4択でサクサク覚えるアプリ",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#17181c",
+  "theme_color": "#17181c",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
